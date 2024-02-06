@@ -37,13 +37,13 @@
         <select class="lectronz-product-select form-select select-auto mx-1"
             title="The Lectronz Product you want to link.">
             <option value="" disabled selected hidden>Lectronz Product</option>
-            {% for product in plugin.products %}
+            {% for product in plugin.products.values %}
             <option value="{{ product.id }}" title="{{ product.short_description }}">
                 {{ product.title }}
             </option>
             {% endfor %}
         </select>
-        {% for product in plugin.products %}
+        {% for product in plugin.products.values %}
         <div class="lectronz-product-options" id="{{ product.id }}" style="display: none;">
             {% for product_option in product.product_options %}
             {% firstof product_option.explanation product_option.name as tooltip %}

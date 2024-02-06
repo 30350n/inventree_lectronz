@@ -279,3 +279,7 @@ class Order:
         for member in ("fulfilled_at", "created_at", "updated_at"):
             if (date_value := getattr(self, member)) and isinstance(date_value, str):
                 setattr(self, member, isoparse(date_value))
+
+    @property
+    def was_shipped(self):
+        return self.fulfilled_at is not None
