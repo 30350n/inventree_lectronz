@@ -1,8 +1,8 @@
 import json
 from json import JSONDecodeError
 
-from django.conf.urls import url
 from django.http import HttpResponse, HttpResponseServerError
+from django.urls import re_path
 
 from part.models import Part
 from part.views import PartDetail
@@ -48,16 +48,19 @@ class LectronzPlugin(
         return panels
 
     def setup_urls(self):
-        UPDATE_PRODUCT_LINK_URL = r"update_product_link(?:\.(?P<format>json))?$"
         return [
-            url(UPDATE_PRODUCT_LINK_URL, self.update_product_link, name="update_product_link"),
+            re_path(
+                r"update_product_link(?:\.(?P<format>json))?$",
+                self.update_product_link,
+                name="update_product_link"
+            ),
         ]
 
     LECTRONZ_PRODUCT_TAG = "lectronz_product"
 
     def update_product_link(self, request):
         try:
-            data = json.loads(request.body)
+            data: dict = json.loads(request.body)
         except JSONDecodeError:
             return HttpResponseServerError("failed to decode JSON")
 
@@ -73,20 +76,17 @@ class LectronzPlugin(
             part.save()
             return HttpResponse("OK")
 
-        if not ("product" in data and "product_options" in data):
-            return HttpResponseServerError("invalid data (missing product or product_options)")
+        if not ("product_id" in data and "product_options" in data):
+            return HttpResponseServerError(
+                "Invalid data (missing product_id or product_options)"
+            )
 
-        try:
-            part.metadata[self.LECTRONZ_PRODUCT_TAG] = {
-                "id": int(data["product_id"]),
-                "options": {int(k): int(v) for k, v in data["product_options"].items()},
-            }
-            part.tags.add(self.LECTRONZ_PRODUCT_TAG)
-            part.save()
-        except ValueError:
-            return HttpResponseServerError("invalid data (non integer id)")
-        except (TypeError, NameError):
-            return HttpResponseServerError("invalid data (wrong type)")
+        part.metadata[self.LECTRONZ_PRODUCT_TAG] = {
+            "id": data["product_id"],
+            "options": data["product_options"],
+        }
+        part.tags.add(self.LECTRONZ_PRODUCT_TAG)
+        part.save()
 
         return HttpResponse("OK")
 

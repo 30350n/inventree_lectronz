@@ -15,6 +15,10 @@
         gap: 2em;
     }
 
+    .lectronz-product-options > select > option:last-child{
+        font-style: italic;
+    }
+
     .unlink-button {
         margin-left: auto;
     }
@@ -43,12 +47,13 @@
         <div class="lectronz-product-options" id="{{ product.id }}" style="display: none;">
             {% for product_option in product.product_options %}
             {% firstof product_option.explanation product_option.name as tooltip %}
-            <select class="form-select select-auto mx-1" id="{{ product_option.id }}"
+            <select class="form-select select-auto mx-1" id="{{ product_option.name }}"
                 title="{{ tooltip }}">
                 <option value="" disabled selected hidden>{{ product_option.name }}</option>
                 {% for choice in product_option.choices %}
-                <option value="{{ choice.id }}">{{ choice.name }}</option>
+                <option value="{{ choice.name }}">{{ choice.name }}</option>
                 {% endfor %}
+                <option value="lectronzplugin_all"><i>All Variants</i></option>
             </select>
             {% endfor%}
         </div>
@@ -87,8 +92,8 @@
         }
 
         data = JSON.stringify({
-            part_pk: "{{ part.pk }}",
-            product_id: product_id,
+            part_pk: parseInt("{{ part.pk }}"),
+            product_id: parseInt(product_id),
             product_options: Object.fromEntries(product_options),
         });
         inventreeFormDataUpload(url=update_product_link_url, data=data, options={
@@ -135,6 +140,7 @@
 
     product_option_selects.forEach((selects) => selects.forEach((select) => {
         select.addEventListener("change", (event) => {
+            select.style.fontStyle = (select.value === "lectronzplugin_all") ? "italic" : null;
             update_product_link();
         });
     }));
@@ -150,6 +156,7 @@
 <script>
     function invalid_link() {
         product_select.value = "";
+        product_options_div.forEach((product_option) => product_option.style.display = "none");
         link_status_badge.textContent = "Invalid Link";
         link_status_badge.classList.replace("bg-secondary", "bg-danger");
     }
