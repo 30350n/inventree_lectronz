@@ -67,6 +67,12 @@ class LectronzPlugin(
         except Part.DoesNotExist:
             return HttpResponseServerError(f"part (pk={part_pk}) does not exist")
 
+        if data.get("unlink"):
+            part.tags.remove(self.LECTRONZ_PRODUCT_TAG)
+            part.metadata.pop(self.LECTRONZ_PRODUCT_TAG, None)
+            part.save()
+            return HttpResponse("OK")
+
         if not ("product" in data and "product_options" in data):
             return HttpResponseServerError("invalid data (missing product or product_options)")
 

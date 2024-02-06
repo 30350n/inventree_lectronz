@@ -4,20 +4,23 @@
         width: fit-content;
     }
 
-    .lectronz-header {
+    .lectronz-header, .lectronz-product, .lectronz-product-options {
         display: flex;
         flex-direction: row;
-        justify-content: space-between;
         align-items: center;
+    }
+
+    .lectronz-header {
+        justify-content: space-between;
         gap: 2em;
+    }
+
+    .unlink-button {
+        margin-left: auto;
     }
 
     select.select-auto {
         width: auto;
-    }
-
-    .lectronz-product-select, .lectronz-product-options, .lectronz-product-options select {
-        display: inline-block;
     }
 </style>
 
@@ -39,7 +42,7 @@
         {% for product in plugin.products %}
         <div class="lectronz-product-options" id="{{ product.id }}" style="display: none;">
             {% for product_option in product.product_options %}
-            {% firstof product_option.explanation product_option.name as tooltip%}
+            {% firstof product_option.explanation product_option.name as tooltip %}
             <select class="form-select select-auto mx-1" id="{{ product_option.id }}"
                 title="{{ tooltip }}">
                 <option value="" disabled selected hidden>{{ product_option.name }}</option>
@@ -50,11 +53,18 @@
             {% endfor%}
         </div>
         {% endfor %}
+        <div class="unlink-button">
+            <button class="btn btn-secondary mx-1"
+                title="Unlink Lectronz Product for this Part" disabled>
+                Unlink
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
     const link_status_badge = document.querySelector(".lectronz-header > .badge");
+    const unlink_button = document.querySelector(".unlink-button > button");
     const product_select = document.querySelector("select.lectronz-product-select");
     const product_options_div = new Map(Array.from(
         document.querySelectorAll("div.lectronz-product-options")
@@ -72,9 +82,7 @@
         ));
 
         if ([...product_options.values()].includes("")) {
-            link_status_badge.textContent = "Not Linked";
-            link_status_badge.classList.replace("bg-success", "bg-secondary");
-            link_status_badge.classList.replace("bg-danger", "bg-secondary");
+            unlink();
             return;
         }
 
@@ -88,9 +96,27 @@
                 link_status_badge.textContent = "Linked";
                 link_status_badge.classList.replace("bg-secondary", "bg-success");
                 link_status_badge.classList.replace("bg-danger", "bg-success");
+                unlink_button.disabled = false;
             },
             "error": (data, status, xhr) => {
                 link_status_badge.textContent = "Failed to Link";
+                link_status_badge.classList.replace("bg-secondary", "bg-danger");
+                link_status_badge.classList.replace("bg-success", "bg-danger");
+            }
+        });
+    }
+
+    function unlink() {
+        data = JSON.stringify({ part_pk: "{{ part.pk }}", unlink: true });
+        inventreeFormDataUpload(url=update_product_link_url, data=data, options={
+            "success": (data, status, xhr) => {
+                link_status_badge.textContent = "Not Linked";
+                link_status_badge.classList.replace("bg-success", "bg-secondary");
+                link_status_badge.classList.replace("bg-danger", "bg-secondary");
+                unlink_button.disabled = true;
+            },
+            "error": (data, status, xhr) => {
+                link_status_badge.textContent = "Failed to Unlink";
                 link_status_badge.classList.replace("bg-secondary", "bg-danger");
                 link_status_badge.classList.replace("bg-success", "bg-danger");
             }
@@ -112,6 +138,12 @@
             update_product_link();
         });
     }));
+
+    unlink_button.addEventListener("click", (event) => {
+        unlink();
+        product_options_div.forEach((product_option) => product_option.style.display = "none");
+        product_select.value = "";
+    });
 </script>
 {% if True %}
 <script>
