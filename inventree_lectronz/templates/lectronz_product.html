@@ -1,0 +1,139 @@
+{% if plugin.products %}
+<style>
+    .lectronz-panel {
+        width: fit-content;
+    }
+
+    .lectronz-header {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2em;
+    }
+
+    select.select-auto {
+        width: auto;
+    }
+
+    .lectronz-product-select, .lectronz-product-options, .lectronz-product-options select {
+        display: inline-block;
+    }
+</style>
+
+<div class="lectronz-panel">
+    <div class="lectronz-header my-3">
+        <span class="mx-1">Select Lectronz Product to link to <b>{{ part.name }}</b>.</span>
+        <span class="badge bg-secondary mx-1" style="min-width: 8em;">Not Linked</span>
+    </div>
+    <div class="lectronz-product my-3">
+        <select class="lectronz-product-select form-select select-auto mx-1"
+            title="The Lectronz Product you want to link.">
+            <option value="" disabled selected hidden>Lectronz Product</option>
+            {% for product in plugin.products %}
+            <option value="{{ product.id }}" title="{{ product.short_description }}">
+                {{ product.title }}
+            </option>
+            {% endfor %}
+        </select>
+        {% for product in plugin.products %}
+        <div class="lectronz-product-options" id="{{ product.id }}" style="display: none;">
+            {% for product_option in product.product_options %}
+            {% firstof product_option.explanation product_option.name as tooltip%}
+            <select class="form-select select-auto mx-1" id="{{ product_option.id }}"
+                title="{{ tooltip }}">
+                <option value="" disabled selected hidden>{{ product_option.name }}</option>
+                {% for choice in product_option.choices %}
+                <option value="{{ choice.id }}">{{ choice.name }}</option>
+                {% endfor %}
+            </select>
+            {% endfor%}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const link_status_badge = document.querySelector(".lectronz-header > .badge");
+    const product_select = document.querySelector("select.lectronz-product-select");
+    const product_options_div = new Map(Array.from(
+        document.querySelectorAll("div.lectronz-product-options")
+    ).map(product_option => [product_option.id, product_option]));
+    const product_option_selects = new Map([...product_options_div].map(
+        ([id, product_option]) => [id, product_option.querySelectorAll("select")]
+    ));
+
+    const link_product_url = "{% url 'plugin:lectronzplugin:link_product' %}";
+
+    function try_to_link_product() {
+        const product_id = product_select.value;
+        const product_options = new Map(Array.from(product_option_selects.get(product_id)).map(
+            (product_option) => [product_option.id, product_option.value]
+        ));
+
+        if ([...product_options.values()].includes("")) {
+            link_status_badge.textContent = "Not Linked";
+            link_status_badge.classList.replace("bg-success", "bg-secondary");
+            link_status_badge.classList.replace("bg-danger", "bg-secondary");
+            return;
+        }
+
+        data = JSON.stringify({
+            part_pk: "{{ part.pk }}",
+            product: product_id,
+            options: Object.fromEntries(product_options),
+        });
+        inventreeFormDataUpload(url=link_product_url, data=data, options={
+            "success": (data, status, xhr) => {
+                link_status_badge.textContent = "Linked";
+                link_status_badge.classList.replace("bg-secondary", "bg-success");
+                link_status_badge.classList.replace("bg-danger", "bg-success");
+            },
+            "error": (data, status, xhr) => {
+                link_status_badge.textContent = "Failed to Link";
+                link_status_badge.classList.replace("bg-secondary", "bg-danger");
+                link_status_badge.classList.replace("bg-success", "bg-danger");
+            }
+        });
+    }
+
+    product_select.addEventListener("change", (event) => {
+        product_options_div.forEach((product_option) => product_option.style.display = "none");
+        const option_id = event.target.value;
+        if (option_id) {
+            product_options_div.get(option_id).style.display = null;
+            product_option_selects.get(option_id).forEach((select) => select.value = "");
+            try_to_link_product();
+        }
+    });
+
+    product_option_selects.forEach((selects) => selects.forEach((select) => {
+        select.addEventListener("change", (event) => {
+            try_to_link_product();
+        });
+    }));
+</script>
+{% if True %}
+<script>
+    product_select.value = ""
+</script>
+{% endif %}
+
+{% elif plugin.products == None %}
+<p class="mx-1">
+    Failed to connect to Lectronz API.
+    Copy your
+    <a href="https://lectronz.com/seller/api_info" target="_blank" rel="noopener noreferrer">
+        <b>Lectronz API Token</b>
+    </a>
+    and set it in the <a href="{% url "settings" %}"><b>Lectronz Plugin Settings</b></a>.
+</p>
+{% else %}
+<p class="mx-1">
+    Failed to find any valid Products in your Lectronz Store.
+    <a href="https://lectronz.com/seller/products" target="_blank" rel="noopener noreferrer">
+        <b>Create a Product</b>
+    </a>
+    to Link it to this Part.
+</p>
+{% endif %}
