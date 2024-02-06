@@ -1,4 +1,4 @@
-import json
+import inspect, json, logging
 from json import JSONDecodeError
 
 from django.http import HttpResponse, HttpResponseServerError
@@ -11,6 +11,8 @@ from plugin import InvenTreePlugin
 from plugin.mixins import PanelMixin, ScheduleMixin, EventMixin, SettingsMixin, UrlsMixin
 
 from .lectronz_v1 import LectronzAPIMixin
+
+logger = logging.getLogger("lectronzplugin")
 
 class LectronzPlugin(
     LectronzAPIMixin, PanelMixin, SettingsMixin, ScheduleMixin, UrlsMixin, InvenTreePlugin
@@ -62,13 +64,13 @@ class LectronzPlugin(
         try:
             data: dict = json.loads(request.body)
         except JSONDecodeError:
-            return HttpResponseServerError("failed to decode JSON")
+            return self.http_error("failed to decode JSON")
 
         try:
             part_pk = data.get("part_pk")
             part = Part.objects.get(pk=part_pk)
         except Part.DoesNotExist:
-            return HttpResponseServerError(f"part (pk={part_pk}) does not exist")
+            return self.http_error(f"Part (pk={part_pk}) does not exist")
 
         if data.get("unlink"):
             part.tags.remove(self.LECTRONZ_PRODUCT_TAG)
@@ -77,9 +79,7 @@ class LectronzPlugin(
             return HttpResponse("OK")
 
         if not ("product_id" in data and "product_options" in data):
-            return HttpResponseServerError(
-                "Invalid data (missing product_id or product_options)"
-            )
+            return self.http_error("Invalid data (missing product_id or product_options)")
 
         part.metadata[self.LECTRONZ_PRODUCT_TAG] = {
             "id": data["product_id"],
@@ -90,3 +90,6 @@ class LectronzPlugin(
 
         return HttpResponse("OK")
 
+    def http_error(self, error_msg):
+        logger.error(f"{inspect.stack()[1].function} error: {error_msg}")
+        return HttpResponseServerError(error_msg)

@@ -103,7 +103,8 @@
                 link_status_badge.classList.replace("bg-danger", "bg-success");
                 unlink_button.disabled = false;
             },
-            "error": (data, status, xhr) => {
+            "error": (xhr, status, error) => {
+                console.error(error + ": " + xhr.responseText);
                 link_status_badge.textContent = "Failed to Link";
                 link_status_badge.classList.replace("bg-secondary", "bg-danger");
                 link_status_badge.classList.replace("bg-success", "bg-danger");
@@ -120,7 +121,8 @@
                 link_status_badge.classList.replace("bg-danger", "bg-secondary");
                 unlink_button.disabled = true;
             },
-            "error": (data, status, xhr) => {
+            "error": (xhr, status, error) => {
+                console.error(error + ": " + xhr.responseText);
                 link_status_badge.textContent = "Failed to Unlink";
                 link_status_badge.classList.replace("bg-secondary", "bg-danger");
                 link_status_badge.classList.replace("bg-success", "bg-danger");
