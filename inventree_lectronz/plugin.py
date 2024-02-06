@@ -4,6 +4,7 @@ from json import JSONDecodeError
 from django.http import HttpResponse, HttpResponseServerError
 from django.urls import re_path
 
+from company.models import Company
 from part.models import Part
 from part.views import PartDetail
 
@@ -32,6 +33,11 @@ class LectronzPlugin(
             "name": "Lectronz API Token",
             "protected": True,
             "required": True,
+        },
+        "LECTRONZ_COMPANY_ID": {
+            "name": "Lectronz Company",
+            "description": "The Company which acts as a Customer for all Lectronz Orders",
+            "model": "company.company",
         },
     }
     API_TOKEN_SETTING = "API_TOKEN"
@@ -89,6 +95,20 @@ class LectronzPlugin(
         part.save()
 
         return HttpResponse("OK")
+
+    def get_lectronz_company(self):
+        if customer_pk := self.get_setting("LECTRONZ_COMPANY_ID"):
+            try:
+                return Company.objects.get(pk=customer_pk)
+            except Company.DoesNotExist:
+                return None
+
+        lectronz_customers = Company.objects.filter(name__icontains="lectronz")
+        if len(lectronz_customers) != 1:
+            return None
+
+        self.set_setting("LECTRONZ_COMPANY_ID", lectronz_customers.first().pk)
+        return lectronz_customers.first()
 
     def http_error(self, error_msg):
         logger.error(f"{inspect.stack()[1].function} error: {error_msg}")
