@@ -4,6 +4,7 @@ from json import JSONDecodeError
 from django.conf.urls import url
 from django.http import HttpResponse, HttpResponseServerError
 
+from part.models import Part
 from part.views import PartDetail
 
 from plugin import InvenTreePlugin
@@ -52,11 +53,34 @@ class LectronzPlugin(
             url(UPDATE_PRODUCT_LINK_URL, self.update_product_link, name="update_product_link"),
         ]
 
+    LECTRONZ_PRODUCT_TAG = "lectronz_product"
+
     def update_product_link(self, request):
         try:
             data = json.loads(request.body)
         except JSONDecodeError:
             return HttpResponseServerError("failed to decode JSON")
+
+        try:
+            part_pk = data.get("part_pk")
+            part = Part.objects.get(pk=part_pk)
+        except Part.DoesNotExist:
+            return HttpResponseServerError(f"part (pk={part_pk}) does not exist")
+
+        if not ("product" in data and "product_options" in data):
+            return HttpResponseServerError("invalid data (missing product or product_options)")
+
+        try:
+            part.metadata[self.LECTRONZ_PRODUCT_TAG] = {
+                "id": int(data["product_id"]),
+                "options": {int(k): int(v) for k, v in data["product_options"].items()},
+            }
+            part.tags.add(self.LECTRONZ_PRODUCT_TAG)
+            part.save()
+        except ValueError:
+            return HttpResponseServerError("invalid data (non integer id)")
+        except (TypeError, NameError):
+            return HttpResponseServerError("invalid data (wrong type)")
 
         return HttpResponse("OK")
 

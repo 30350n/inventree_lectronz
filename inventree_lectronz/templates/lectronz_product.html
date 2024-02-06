@@ -80,8 +80,8 @@
 
         data = JSON.stringify({
             part_pk: "{{ part.pk }}",
-            product: product_id,
-            options: Object.fromEntries(product_options),
+            product_id: product_id,
+            product_options: Object.fromEntries(product_options),
         });
         inventreeFormDataUpload(url=update_product_link_url, data=data, options={
             "success": (data, status, xhr) => {
