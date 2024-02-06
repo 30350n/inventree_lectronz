@@ -29,8 +29,8 @@ class LectronzAPIMixin(APICallMixin):
                 return orders
 
     def _get_orders(self, offset, limit, retries=5):
-        url_args = {"offset": offset, "limit": limit}
-        for _ in range(retries):
+        url_args = {"offset": [offset], "limit": [limit]}
+        for _ in range(retries + 1):
             if response := self.api_call("orders", url_args=url_args):
                 if "errors" in response:
                     return None
@@ -52,8 +52,8 @@ class LectronzAPIMixin(APICallMixin):
                 return products
 
     def _get_products(self, offset, limit, retries=5):
-        url_args = {"offset": offset, "limit": limit}
-        for _ in range(retries):
+        url_args = {"offset": [offset], "limit": [limit]}
+        for _ in range(retries + 1):
             if response := self.api_call("products", url_args=url_args):
                 if "errors" in response:
                     return None
@@ -144,8 +144,7 @@ class Product:
         if isinstance(self.product_options, list):
             self.product_options = [
                 ProductOption(**option)
-                for option in self.product_options
-                if isinstance(option, dict)
+                for option in self.product_options if isinstance(option, dict)
             ]
         for member in ("published_at", "created_at", "updated_at"):
             if (date_value := getattr(self, member)) and isinstance(date_value, str):
@@ -272,9 +271,7 @@ class Order:
         if isinstance(self.shipping_weight, dict):
             self.shipping_weight = ShippingWeight(**self.shipping_weight)
         if isinstance(self.items, list):
-            self.items = [
-                Item(**item) for item in self.items if isinstance(item, dict)
-            ]
+            self.items = [Item(**item) for item in self.items if isinstance(item, dict)]
         if isinstance(self.currency, str):
             self.currency = Currency(self.currency)
         if isinstance(self.payment, dict):
