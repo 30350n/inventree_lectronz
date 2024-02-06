@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from plugin.mixins import APICallMixin
@@ -83,18 +83,18 @@ class ProductOptionChoice:
     id: int
     name: str
     price: float
+    stock_available: float = field(default=None, kw_only=True)
     sku: str
     weight: float
-    stock_available: float = None
-    display_order: float = None
+    display_order: float = field(default=None, kw_only=True)
 
 @dataclass
 class ProductOption:
     id: int
     name: str
     explanation: str
+    display_order: float = field(default=None, kw_only=True)
     choices: list[ProductOptionChoice]
-    display_order: float = None
 
     def __post_init__(self):
         if isinstance(self.choices, list):
@@ -189,7 +189,7 @@ class ShippingWeight:
 class ItemOption:
     name: str
     choice: str
-    sku: str
+    sku: str = field(default=None, kw_only=True)
     weight: float
 
 @dataclass
@@ -197,9 +197,9 @@ class Item:
     product_id: int
     product_name: str
     product_description: str
-    sku: str
+    sku: str = field(default=None, kw_only=True)
     price: float
-    discount: float
+    discount: float = field(default=None, kw_only=True)
     quantity: int
     weight: float
     options: list[ItemOption]
@@ -231,7 +231,7 @@ class Order:
     shipping_method: str
     shipping_is_tracked: bool
     shipping_weight: ShippingWeight
-    ioss_number: str
+    ioss_number: str = field(default=None, kw_only=True)
     items: list[Item]
     currency: Currency
     shipping_cost: float
@@ -241,19 +241,19 @@ class Order:
     total_tax: float
     tax_rate: float
     total: float
-    fulfilled_at: str
+    fulfilled_at: str = field(default=None, kw_only=True)
     tracking_code: str
     tracking_url: str
     lectronz_fee: float
     tax_collected: float
-    discount_codes: str
+    discount_codes: str = field(default=None, kw_only=True)
     payment_fees: float
     payout: float
     payment: Payment
     created_at: str
     updated_at: str
     fulfill_until: str
-    customer_note: str
+    customer_note: str = field(default=None, kw_only=True)
 
     def __post_init__(self):
         if isinstance(self.status, str):
