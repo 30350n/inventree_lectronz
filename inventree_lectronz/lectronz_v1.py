@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field
+from datetime import datetime
+from dateutil.parser import isoparse
 from enum import Enum
 
 from plugin.mixins import APICallMixin
@@ -127,9 +129,9 @@ class Product:
     hs_code: str
     oshwa_uid: str
     product_options: list[ProductOption]
-    published_at: str
-    created_at: str
-    updated_at: str
+    published_at: datetime
+    created_at: datetime
+    updated_at: datetime
     url: str
 
     def __post_init__(self):
@@ -145,6 +147,9 @@ class Product:
                 for option in self.product_options
                 if isinstance(option, dict)
             ]
+        for member in ("published_at", "created_at", "updated_at"):
+            if (date_value := getattr(self, member)) and isinstance(date_value, str):
+                setattr(self, member, isoparse(date_value))
 
 class OrderStatus(str, Enum):
     PAYMENT_SUCCESS = "payment_success"
@@ -241,7 +246,7 @@ class Order:
     total_tax: float
     tax_rate: float
     total: float
-    fulfilled_at: str = field(default=None, kw_only=True)
+    fulfilled_at: datetime = field(default=None, kw_only=True)
     tracking_code: str
     tracking_url: str
     lectronz_fee: float
@@ -250,8 +255,8 @@ class Order:
     payment_fees: float
     payout: float
     payment: Payment
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
     fulfill_until: str
     customer_note: str = field(default=None, kw_only=True)
 
@@ -274,3 +279,6 @@ class Order:
             self.currency = Currency(self.currency)
         if isinstance(self.payment, dict):
             self.payment = Payment(**self.payment)
+        for member in ("fulfilled_at", "created_at", "updated_at"):
+            if (date_value := getattr(self, member)) and isinstance(date_value, str):
+                setattr(self, member, isoparse(date_value))
