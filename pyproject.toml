@@ -1,0 +1,21 @@
+[project]
+name = "inventree-lectronz"
+version = "0.1"
+description = "Lectronz integration for InvenTree"
+readme = "README.md"
+requires-python = ">=3.8"
+license.text = "MIT"
+authors = [{ name = "Bobbe", email = "mail@30350n.de" }]
+
+[project.entry-points."inventree_plugins"]
+inventree-lectronz = "inventree_lectronz:plugin.LectronzPlugin"
+
+[tool.autopep8]
+aggressive = 3
+max_line_length = 96
+ignore = "E12,E13,E201,E202,E221,E241,E261,E302,E305,E401,E402"
+
+[tool.isort]
+line_length = 96
+lines_after_imports = 1
+combine_straight_imports = true
