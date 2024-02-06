@@ -45,12 +45,14 @@ class LectronzPlugin(
             })
 
         return panels
-    
-    def setup_urls(self):
-        LINK_PRODUCT_URL = r"link_product(?:\.(?P<format>json))?$"
-        return [url(LINK_PRODUCT_URL, self.link_product, name="link_product")]
 
-    def link_product(self, request):
+    def setup_urls(self):
+        UPDATE_PRODUCT_LINK_URL = r"update_product_link(?:\.(?P<format>json))?$"
+        return [
+            url(UPDATE_PRODUCT_LINK_URL, self.update_product_link, name="update_product_link"),
+        ]
+
+    def update_product_link(self, request):
         try:
             data = json.loads(request.body)
         except JSONDecodeError:

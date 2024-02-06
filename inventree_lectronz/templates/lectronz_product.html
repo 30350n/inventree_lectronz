@@ -63,9 +63,9 @@
         ([id, product_option]) => [id, product_option.querySelectorAll("select")]
     ));
 
-    const link_product_url = "{% url 'plugin:lectronzplugin:link_product' %}";
+    const update_product_link_url = "{% url 'plugin:lectronzplugin:update_product_link' %}";
 
-    function try_to_link_product() {
+    function update_product_link() {
         const product_id = product_select.value;
         const product_options = new Map(Array.from(product_option_selects.get(product_id)).map(
             (product_option) => [product_option.id, product_option.value]
@@ -83,7 +83,7 @@
             product: product_id,
             options: Object.fromEntries(product_options),
         });
-        inventreeFormDataUpload(url=link_product_url, data=data, options={
+        inventreeFormDataUpload(url=update_product_link_url, data=data, options={
             "success": (data, status, xhr) => {
                 link_status_badge.textContent = "Linked";
                 link_status_badge.classList.replace("bg-secondary", "bg-success");
@@ -103,13 +103,13 @@
         if (option_id) {
             product_options_div.get(option_id).style.display = null;
             product_option_selects.get(option_id).forEach((select) => select.value = "");
-            try_to_link_product();
+            update_product_link();
         }
     });
 
     product_option_selects.forEach((selects) => selects.forEach((select) => {
         select.addEventListener("change", (event) => {
-            try_to_link_product();
+            update_product_link();
         });
     }));
 </script>
