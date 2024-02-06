@@ -18,6 +18,13 @@ Homepage = "https://github.com/30350n/inventree_lectronz"
 [project.entry-points."inventree_plugins"]
 inventree-lectronz = "inventree_lectronz:plugin.LectronzPlugin"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+exclude = [".git", ".jj", ".github/", ".gitignore", ".pre-commit-config.yaml"]
+
 [tool.autopep8]
 aggressive = 3
 max_line_length = 96
