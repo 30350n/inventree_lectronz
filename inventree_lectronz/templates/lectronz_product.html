@@ -27,7 +27,7 @@
 <div class="lectronz-panel">
     <div class="lectronz-header my-3">
         <span class="mx-1">Select Lectronz Product to link to <b>{{ part.name }}</b>.</span>
-        <span class="badge bg-secondary mx-1" style="min-width: 8em;">Not Linked</span>
+        <span class="badge bg-secondary mx-1" style="min-width: 9em;">Not Linked</span>
     </div>
     <div class="lectronz-product my-3">
         <select class="lectronz-product-select form-select select-auto mx-1"
@@ -145,7 +145,64 @@
         product_select.value = "";
     });
 </script>
-{% if True %}
+{% if "lectronz_product" in part.metadata %}
+{{ part.metadata|json_script:"part_metadata" }}
+<script>
+    function invalid_link() {
+        product_select.value = "";
+        link_status_badge.textContent = "Invalid Link";
+        link_status_badge.classList.replace("bg-secondary", "bg-danger");
+    }
+
+    function arrayEquals(a, b) {
+        return a.length === b.length && a.every((val, index) => val === b[index]);
+    }
+
+    function setup_inital_selection() {
+        unlink_button.disabled = false;
+
+        const part_metadata = document.getElementById("part_metadata");
+        const initial_data = JSON.parse(part_metadata.textContent).lectronz_product;
+    
+        if (!(initial_data.hasOwnProperty("id") && initial_data.hasOwnProperty("options"))) {
+            invalid_link();
+            return;
+        }
+
+        const product_id = initial_data.id.toString();
+        const product_ids = [...product_select.options].map(option => option.value).slice(1);
+        if (!product_ids.includes(product_id)) {
+            invalid_link();
+            return;
+        }
+        product_select.value = initial_data.id;
+        product_options_div.get(product_id).style.display = null;
+
+        const product_options = new Map([...product_option_selects.get(product_id)].map(
+            select => [select.id, select]
+        ));
+        if (!arrayEquals([...product_options.keys()], Object.keys(initial_data.options))) {
+            invalid_link();
+            return;
+        }
+
+        for (let [option_id, option_select] of product_options) {
+            const choice_id = initial_data.options[option_id].toString();
+            const choice_ids = [...option_select.options].map(option => option.value).slice(1);
+            if (!choice_ids.includes(choice_id)) {
+                invalid_link();
+                return;
+            }
+            option_select.value = choice_id;
+        }
+
+        link_status_badge.textContent = "Linked";
+        link_status_badge.classList.replace("bg-secondary", "bg-success");
+    }
+
+    setup_inital_selection();
+</script>
+{% else %}
 <script>
     product_select.value = ""
 </script>
