@@ -4,8 +4,16 @@ version = "0.1"
 description = "Lectronz integration for InvenTree"
 readme = "README.md"
 requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Development Status :: 4 - Beta",
+]
 license.text = "MIT"
 authors = [{ name = "Bobbe", email = "mail@30350n.de" }]
+
+[project.urls]
+Homepage = "https://github.com/30350n/inventree_lectronz"
 
 [project.entry-points."inventree_plugins"]
 inventree-lectronz = "inventree_lectronz:plugin.LectronzPlugin"
