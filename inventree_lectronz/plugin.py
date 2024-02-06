@@ -4,10 +4,12 @@ from json import JSONDecodeError
 
 from dateutil.rrule import *
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.http import HttpResponse, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseServerError, JsonResponse
 from django.urls import re_path
 
 from company.models import Company
+from order.models import SalesOrder
+from order.views import SalesOrderDetail
 from part.models import Part
 from part.views import PartDetail
 
@@ -16,7 +18,8 @@ from plugin.mixins import PanelMixin, ScheduleMixin, EventMixin, SettingsMixin, 
 from plugin.models import PluginSetting
 
 from .lectronz_v1 import LectronzAPIMixin
-from .create_sales_order import LECTRONZ_PRODUCT_TAG, create_sales_order
+from .create_sales_order import LECTRONZ_ORDER_TAG, LECTRONZ_PRODUCT_TAG, create_sales_order
+from .templatetags import VALID_CUSTOMER_REFERENCE
 
 logger = logging.getLogger("lectronzplugin")
 
@@ -78,6 +81,8 @@ class LectronzPlugin(
     def get_custom_panels(self, view, request):
         panels = []
 
+        lectronz = self.get_lectronz_company()
+
         if isinstance(view, PartDetail) and view.get_object().salable:
             if not self.products:
                 self.update_products()
@@ -85,6 +90,12 @@ class LectronzPlugin(
                 "title": "Lectronz Product",
                 "icon": "fa-store",
                 "content_template": "lectronz_product.html",
+            })
+        elif isinstance(view, SalesOrderDetail) and view.get_object().customer == lectronz:
+            panels.append({
+                "title": "Lectronz Order",
+                "icon": "fa-store",
+                "content_template": "lectronz_order.html",
             })
 
         return panels
@@ -95,6 +106,9 @@ class LectronzPlugin(
                 r"update_product_link(?:\.(?P<format>json))?$",
                 self.update_product_link,
                 name="update_product_link"
+            ),
+            re_path(
+                r"update_order(?:\.(?P<format>json))?$", self.update_order, name="update_order"
             ),
         ]
 
@@ -125,6 +139,40 @@ class LectronzPlugin(
         }
         part.tags.add(LECTRONZ_PRODUCT_TAG)
         part.save()
+
+        return HttpResponse("OK")
+
+    def update_order(self, request):
+        try:
+            data: dict = json.loads(request.body)
+        except JSONDecodeError:
+            return self.http_error("Failed to decode JSON")
+
+        try:
+            order_pk = data.get("order_pk")
+            sales_order = SalesOrder.objects.get(pk=order_pk)
+        except Part.DoesNotExist:
+            return self.http_error(f"Order (pk={order_pk}) does not exist")
+
+        customer_reference = sales_order.customer_reference
+        if not (match := VALID_CUSTOMER_REFERENCE.fullmatch(customer_reference)):
+            return self.http_error(f"Invalid customer reference '{customer_reference}'")
+
+        order_id = match.group(1)
+        if not (order := self.get_order(order_id, retries=0)):
+            return self.http_error(f"Failed to get order #{order_id} from Lectronz")
+
+        if not (lectronz := self.get_lectronz_company()) or not lectronz.is_customer:
+            return self.http_error("Lectronz Company is not set or not a customer")
+
+        if not self.products:
+            self.update_products()
+
+        target_date = self.get_order_target_date(order.created_at)
+        create_sales_order(lectronz, order, self.products, target_date, sales_order)
+
+        if sync_errors := sales_order.metadata[LECTRONZ_ORDER_TAG].get("sync_errors"):
+            return JsonResponse({"sync_errors": sync_errors})
 
         return HttpResponse("OK")
 

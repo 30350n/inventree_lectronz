@@ -37,6 +37,13 @@ class LectronzAPIMixin(APICallMixin):
                 return [Order(**order) for order in response.get("orders", [])]
         return None
 
+    def get_order(self, order_id, retries=5):
+        for _ in range(retries + 1):
+            if response := self.api_call(f"orders/{order_id}"):
+                if "errors" in response:
+                    return None
+                return Order(**response)
+
     def get_products(self, offset=0, limit=None, retries=5):
         if limit is not None:
             return self._get_products(offset, limit, retries=retries)

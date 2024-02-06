@@ -1,0 +1,133 @@
+{% load plugin_extras %}
+
+<style>
+    .lectronz-panel {
+        width: fit-content;
+    }
+
+    .lectronz-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .lectronz-alert {
+        display: block;
+        padding: 6px 0.75rem;
+        margin-bottom: 0.4rem;
+    }
+    .lectronz-alert:last-child, .lectronz-header > .lectronz-alert {
+        margin-bottom: 0;
+    }
+</style>
+
+<div class="lectronz-panel">
+    {% with lectronz_order=order.metadata.lectronz_order %}
+    <div class="lectronz-header">
+        {% if not lectronz_order %}
+        <div class="alert lectronz-alert alert-danger"><b>
+            Error: Failed to find order with Customer Reference
+            '{{ order.customer_reference }}' at your Lectronz store.
+        </b></div>
+        {% elif lectronz_order.synced %}
+        <div class="alert lectronz-alert alert-info">
+            Sales Order has been synchronized with the Lectronz API on
+            <b>{{ lectronz_order.synced }}</b>.
+        </div>
+        <button class="btn btn-primary" title="Update Sales Order from Lectronz API">
+            Update
+        </button>
+        {% else %}
+        <div class="alert lectronz-alert alert-warning">
+            Sales Order <b>has not been synchronized</b> with the Lectronz API.
+        </div>
+        <button class="btn btn-primary" title="Synchronize Sales Order from Lectronz API">
+            Synchronize
+        </button>
+        {% endif %}
+    </div>
+    {% if not order.total_price.amount|lectronz_float_eq:lectronz_total %}
+    <div class="alert lectronz-alert alert-warning"><b>
+        Warning: Sales Order Total doesn't match Order Total from the Lectronz API
+        ({{ order.total_price.amount }} != {{ lectronz_total }})
+    </b></div>
+    {% endif %}
+    {% if not order.customer_reference|lectronz_valid_customer_reference %}
+    <meta name="invalid_customer_reference">
+    <div class="alert lectronz-alert alert-danger"><b>
+        Error: Invalid Customer Reference '{{ order.customer_reference }}'
+        (has to match "^#?\d+$")
+    </b></div>
+    {% endif %}
+    <div class="lectronz-sync-errors">
+        {% for message in lectronz_order.sync_errors %}
+        <div class="alert lectronz-alert alert-danger"><b>Error: {{ message }}</b></div>
+        {% endfor %}
+    </div>
+    {% endwith %}
+</div>
+
+<script>
+    const lectronz_panel = document.querySelector(".lectronz-panel")
+    const update_buttons = document.querySelectorAll(".lectronz-header > button");
+    const sync_status = document.querySelector(".lectronz-header > .alert");
+    const sync_errors = document.querySelector(".lectronz-sync-errors")
+
+    if (document.querySelector(".lectronz-panel > meta[name=\"invalid_customer_reference\"]")) {
+        update_buttons.forEach((button) => button.disabled = true);
+    }
+
+    const update_order_url = "{% url 'plugin:lectronzplugin:update_order' %}";
+
+    function createElement(parent, tagName, classes=[], textContent="") {
+        const element = document.createElement(tagName);
+        element.classList.add(...classes);
+        element.textContent = textContent;
+        parent.appendChild(element);
+        return element;
+    }
+
+    update_buttons.forEach((button) => button.addEventListener("click", (event) => {
+        data = JSON.stringify({ order_pk: "{{ order.pk }}" });
+        inventreeFormDataUpload(url=update_order_url, data=data, options={
+            "success": (data, status, xhr) => {
+                sync_errors.innerHTML = "";
+                if (data === "OK") {
+                    button.disabled = true;
+                    sync_status.classList.replace("alert-warning", "alert-info");
+                    sync_status.classList.replace("alert-danger", "alert-info");
+                    sync_status.innerHTML = "";
+                    createElement(sync_status, "b", [],
+                        "Successfully synchronized Sales Order with the Lectronz API."
+                    );
+                }
+                else {
+                    sync_status.classList.replace("alert-info", "alert-warning");
+                    sync_status.classList.replace("alert-danger", "alert-warning");
+                    sync_status.innerHTML = "";
+                    plural = data.sync_errors.length > 1 ? "s" : "";
+                    createElement(sync_status, "b", [],
+                        "Encountered " + data.sync_errors.length + " error" + plural + " " +
+                        "while synchronizing Sales Order with the Lectronz API."
+                    );
+                    data.sync_errors.forEach((error) => {
+                        const div = createElement(
+                            sync_errors, "div", ["alert", "lectronz-alert", "alert-danger"]
+                        );
+                        createElement(div, "b", [], "Error: " + error);
+                    });
+                }
+            },
+            "error": (xhr, status, error) => {
+                console.error(error + ": " + xhr.responseText);
+                sync_status.classList.replace("alert-info", "alert-danger");
+                sync_status.classList.replace("alert-warning", "alert-danger");
+                sync_status.innerHTML = "";
+                createElement(sync_status, "b", [], error + ": " + xhr.responseText);
+            }
+        });
+    }));
+</script>
