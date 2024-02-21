@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from django.db.models import Q, Model
+from django.db.models import Model, Q
 from django.db.models.manager import BaseManager
 from djmoney.money import Money
 
@@ -10,7 +10,7 @@ from order.models import (
 )
 from part.models import Part
 
-from .lectronz_v1 import Item as OrderItem, Order, Product, OrderStatus
+from .lectronz_v1 import Item as OrderItem, Order, OrderStatus, Product
 
 LECTRONZ_PRODUCT_TAG = "lectronz_product"
 LECTRONZ_ORDER_TAG = "lectronz_order"

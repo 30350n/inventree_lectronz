@@ -172,7 +172,7 @@
 
         const part_metadata = document.getElementById("part_metadata");
         const initial_data = JSON.parse(part_metadata.textContent).lectronz_product;
-    
+
         if (!(initial_data.hasOwnProperty("id") && initial_data.hasOwnProperty("options"))) {
             invalid_link();
             return;

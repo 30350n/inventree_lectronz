@@ -3,7 +3,7 @@ from datetime import datetime
 from json import JSONDecodeError
 
 from dateutil.rrule import *
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.http import HttpResponse, HttpResponseServerError, JsonResponse
 from django.urls import re_path
 
@@ -14,11 +14,11 @@ from part.models import Part
 from part.views import PartDetail
 
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, ScheduleMixin, EventMixin, SettingsMixin, UrlsMixin
+from plugin.mixins import PanelMixin, ScheduleMixin, SettingsMixin, UrlsMixin
 from plugin.models import PluginSetting
 
-from .lectronz_v1 import LectronzAPIMixin
 from .create_sales_order import LECTRONZ_ORDER_TAG, LECTRONZ_PRODUCT_TAG, create_sales_order
+from .lectronz_v1 import LectronzAPIMixin
 from .templatetags import VALID_CUSTOMER_REFERENCE
 
 logger = logging.getLogger("lectronzplugin")

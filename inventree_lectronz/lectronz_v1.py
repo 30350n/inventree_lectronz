@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from dateutil.parser import isoparse
 from enum import Enum
+
+from dateutil.parser import isoparse
 
 from plugin.mixins import APICallMixin
 

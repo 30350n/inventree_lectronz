@@ -33,4 +33,9 @@ ignore = "E12,E13,E201,E202,E221,E241,E261,E302,E305,E401,E402"
 [tool.isort]
 line_length = 96
 lines_after_imports = 1
+multi_line_output = 5
+combine_as_imports = true
 combine_straight_imports = true
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "INVENTREE", "FIRSTPARTY", "LOCALFOLDER"]
+known_inventree = ["company", "order", "part"]
+known_firstparty = ["plugin"]
