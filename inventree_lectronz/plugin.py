@@ -201,10 +201,10 @@ class LectronzPlugin(
 
         sync_fulfilled = self.get_setting("SYNC_FULFILLED")
         for order in orders:
+            self.order_offset += 1
             if order.was_shipped or sync_fulfilled:
                 target_date = self.get_order_target_date(order.created_at)
                 create_sales_order(lectronz, order, self.products, target_date)
-        self.order_offset += len(orders)
 
     def get_order_target_date(self, created_at: datetime):
         BUSINESS_DAYS = (MO, TU, WE, TH, FR)
