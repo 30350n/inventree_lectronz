@@ -49,10 +49,11 @@
         </button>
         {% endif %}
     </div>
-    {% if not order.total_price.amount|lectronz_float_eq:lectronz_total %}
+    {% if not order.total_price.amount|lectronz_float_eq:lectronz_order.total %}
     <div class="alert lectronz-alert alert-warning"><b>
         Warning: Sales Order Total doesn't match Order Total from the Lectronz API
-        ({{ order.total_price.amount }} != {{ lectronz_total }})
+        ({{ order.total_price.amount|floatformat:2 }} &ne;
+        {{ lectronz_order.total|floatformat:2 }})
     </b></div>
     {% endif %}
     {% if not order.customer_reference|lectronz_valid_customer_reference %}
