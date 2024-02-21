@@ -15,7 +15,6 @@ from part.views import PartDetail
 
 from plugin import InvenTreePlugin
 from plugin.mixins import PanelMixin, ScheduleMixin, SettingsMixin, UrlsMixin
-from plugin.models import PluginSetting
 
 from .create_sales_order import LECTRONZ_ORDER_TAG, LECTRONZ_PRODUCT_TAG, create_sales_order
 from .lectronz_v1 import LectronzAPIMixin
@@ -24,7 +23,7 @@ from .templatetags import VALID_CUSTOMER_REFERENCE
 logger = logging.getLogger("lectronzplugin")
 
 class LectronzPlugin(
-    LectronzAPIMixin, PanelMixin, SettingsMixin, ScheduleMixin, UrlsMixin, InvenTreePlugin
+    LectronzAPIMixin, PanelMixin, ScheduleMixin, UrlsMixin, SettingsMixin, InvenTreePlugin
 ):
     """Plugin to integrate the Lectronz Marketplace into InvenTree"""
 
@@ -181,7 +180,7 @@ class LectronzPlugin(
             "sync_lectronz_orders": {
                 "func": "sync_lectronz_orders",
                 "schedule": "I",
-                "minutes": self.get_setting("SYNC_SCHEDULE_MINUTES", backup_value=60),
+                "minutes": self.get_setting("SYNC_SCHEDULE_MINUTES") or 60,
             },
         }
 
@@ -208,7 +207,7 @@ class LectronzPlugin(
 
     def get_order_target_date(self, created_at: datetime):
         BUSINESS_DAYS = (MO, TU, WE, TH, FR)
-        processing_days = self.get_setting("TARGET_ORDER_PROCESSING_TIME", backup_value=3)
+        processing_days = self.get_setting("TARGET_ORDER_PROCESSING_TIME")
         only_business_days = self.get_setting("ORDER_PROCESSING_BUSINESS_DAYS_ONLY")
         return rrule(
             DAILY, byweekday=BUSINESS_DAYS if only_business_days else None, dtstart=created_at
@@ -230,11 +229,6 @@ class LectronzPlugin(
 
         self.set_setting("LECTRONZ_COMPANY_ID", lectronz_customers.first().pk)
         return lectronz_customers.first()
-
-    def get_setting(self, key, cache=False, backup_value=None):
-        return PluginSetting.get_setting(
-            key, backup_value=backup_value, plugin=self.plugin_config(), cache=cache
-        )
 
     def http_error(self, error_msg):
         logger.error(f"{inspect.stack()[1].function} error: {error_msg}")
