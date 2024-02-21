@@ -23,7 +23,7 @@ def create_sales_order(
     sales_order: SalesOrder = None,
 ):
     existing_sales_orders = SalesOrder.objects.filter(
-        customer=lectronz, customer_reference=f"#{order.id}"
+        customer=lectronz, customer_reference__exact=f"#{order.id}"
     )
     if not sales_order and existing_sales_orders.exists():
         return
@@ -82,7 +82,7 @@ def create_extra_lines(sales_order: SalesOrder, order: Order):
         "quantity": 1,
         "price": Money(order.shipping_cost, order.currency.value),
     }
-    if shipping_line := extra_lines.filter(reference="Shipping").first():
+    if shipping_line := extra_lines.filter(reference__exact="Shipping").first():
         update_object_with_dict(shipping_line, shipping_line_data)
     else:
         shipping_line = SalesOrderExtraLine.objects.create(
@@ -94,7 +94,7 @@ def create_extra_lines(sales_order: SalesOrder, order: Order):
         "quantity": 1,
         "price": Money(max(order.tax_collected, order.total_tax), order.currency.value),
     }
-    if sales_tax_line := extra_lines.filter(reference="Sales Tax").first():
+    if sales_tax_line := extra_lines.filter(reference__exact="Sales Tax").first():
         update_object_with_dict(sales_tax_line, sales_tax_line_data)
     else:
         sales_tax_line = SalesOrderExtraLine.objects.create(
@@ -157,7 +157,14 @@ def create_line_item(
         "quantity": float(order_item.quantity),
         "link": product.url if product else None,
     }
-    if line_item := existing_line_items.filter(Q(part=part) | Q(reference=reference)).first():
+
+    line_items = existing_line_items.filter(Q(part=part) | Q(reference__exact=reference))
+    if line_items.count() > 1:
+        sales_order.metadata[LECTRONZ_ORDER_TAG]["sync_errors"].append(
+            f"Failed to update line item for Product '{reference}' (id={product_id})"
+        )
+        return None
+    elif line_item := line_items.first():
         update_object_with_dict(line_item, line_item_data)
     else:
         line_item = SalesOrderLineItem.objects.create(order=sales_order, **line_item_data)
