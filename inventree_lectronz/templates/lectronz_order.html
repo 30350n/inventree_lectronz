@@ -27,12 +27,7 @@
 <div class="lectronz-panel">
     {% with lectronz_order=order.metadata.lectronz_order %}
     <div class="lectronz-header">
-        {% if not lectronz_order %}
-        <div class="alert lectronz-alert alert-danger"><b>
-            Error: Failed to find order with Customer Reference
-            '{{ order.customer_reference }}' at your Lectronz store.
-        </b></div>
-        {% elif lectronz_order.synced %}
+        {% if lectronz_order.synced %}
         <div class="alert lectronz-alert alert-info">
             Sales Order has been synchronized with the Lectronz API on
             <b>{{ lectronz_order.synced }}</b>.
