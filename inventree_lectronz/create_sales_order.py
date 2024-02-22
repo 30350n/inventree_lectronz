@@ -43,7 +43,7 @@ def create_sales_order(
         "customer_reference": f"#{order.id}",
         "shipment_date": order.fulfilled_at,
         "description":
-            f"customer note: \"{order.customer_note}\"" if order.customer_note else "",
+            f"Customer Note: \"{order.customer_note}\"" if order.customer_note else "",
         "link": f"https://lectronz.com/seller/orders/{order.id}/edit",
         "target_date": target_date,
         "creation_date": order.created_at,
@@ -181,7 +181,8 @@ def create_shipment(sales_order: SalesOrder, order: Order):
         "invoice_number": f"#{order.id}",
         "link": order.tracking_url,
     }
-    if len(existing_shipments) == 1 and (shipment := existing_shipments.first()):
+    if len(existing_shipments) == 1:
+        shipment = existing_shipments.first()
         update_object_with_dict(shipment, shipment_data)
     elif not existing_shipments.exists():
         shipment = SalesOrderShipment.objects.create(order=sales_order, **shipment_data)
