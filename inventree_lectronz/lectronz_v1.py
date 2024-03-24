@@ -68,6 +68,9 @@ class LectronzAPIMixin(APICallMixin):
                 return [Product(**product) for product in response.get("products", [])]
         return None
 
+def optional():
+    return field(default=None, kw_only=True)
+
 class ProductStatus(str, Enum):
     DRAFT = "draft"
     UNDER_REVIEW = "under_review"
@@ -82,28 +85,28 @@ class Currency(str, Enum):
 
 @dataclass
 class ProductLinks:
-    documentation: str = ""
-    code: str = ""
-    design_files: str = ""
-    schematics: str = ""
-    bom: str = ""
+    documentation: str | None = optional()
+    code: str | None = optional()
+    design_files: str | None = optional()
+    schematics: str | None = optional()
+    bom: str | None = optional()
 
 @dataclass
 class ProductOptionChoice:
     id: int
     name: str
     price: float
-    stock_available: float = field(default=None, kw_only=True)
-    sku: str
+    stock_available: float | None = optional()
+    sku: str | None = optional()
     weight: float
-    display_order: float = field(default=None, kw_only=True)
+    display_order: float | None = optional()
 
 @dataclass
 class ProductOption:
     id: int
     name: str
     explanation: str
-    display_order: float = field(default=None, kw_only=True)
+    display_order: float | None = optional()
     choices: list[ProductOptionChoice]
 
     def __post_init__(self):
@@ -126,16 +129,16 @@ class Product:
     slug: str
     stock_available: float
     total_sold: float
-    sku: str
+    sku: str | None = optional()
     short_description: str
     description: str
     links: ProductLinks
     images: list[str]
-    thumbnail: str
+    thumbnail: str | None = optional()
     weight: float
     weight_unit: str
-    hs_code: str
-    oshwa_uid: str
+    hs_code: str | None = optional()
+    oshwa_uid: str | None = optional()
     product_options: list[ProductOption]
     published_at: datetime
     created_at: datetime
@@ -201,7 +204,7 @@ class ShippingWeight:
 class ItemOption:
     name: str
     choice: str
-    sku: str = field(default=None, kw_only=True)
+    sku: str | None = optional()
     weight: float
 
 @dataclass
@@ -209,9 +212,9 @@ class Item:
     product_id: int
     product_name: str
     product_description: str
-    sku: str = field(default=None, kw_only=True)
+    sku: str | None = optional()
     price: float
-    discount: float = field(default=None, kw_only=True)
+    discount: float | None = optional()
     quantity: int
     weight: float
     options: list[ItemOption]
@@ -243,7 +246,7 @@ class Order:
     shipping_method: str
     shipping_is_tracked: bool
     shipping_weight: ShippingWeight
-    ioss_number: str = field(default=None, kw_only=True)
+    ioss_number: str | None = optional()
     items: list[Item]
     currency: Currency
     shipping_cost: float
@@ -253,19 +256,19 @@ class Order:
     total_tax: float
     tax_rate: float
     total: float
-    fulfilled_at: datetime = field(default=None, kw_only=True)
+    fulfilled_at: datetime | None = optional()
     tracking_code: str
     tracking_url: str
     lectronz_fee: float
     tax_collected: float
-    discount_codes: str = field(default=None, kw_only=True)
-    payment_fees: float
-    payout: float
+    discount_codes: str | None = optional()
+    payment_fees: float | None = optional()
+    payout: float | None = optional()
     payment: Payment
     created_at: datetime
     updated_at: datetime
     fulfill_until: str
-    customer_note: str = field(default=None, kw_only=True)
+    customer_note: str | None = optional()
 
     def __post_init__(self):
         if isinstance(self.status, str):

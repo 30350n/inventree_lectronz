@@ -214,7 +214,8 @@ class LectronzPlugin(
         )[processing_days]
 
     def update_products(self):
-        self.products = {product.id: product for product in self.get_products()}
+        if products := self.get_products():
+            self.products = {product.id: product for product in products}
 
     def get_lectronz_company(self):
         if customer_pk := self.get_setting("LECTRONZ_COMPANY_ID"):
