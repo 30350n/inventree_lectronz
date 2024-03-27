@@ -1,5 +1,5 @@
 import inspect, json, logging
-from datetime import datetime
+from datetime import date, datetime
 from json import JSONDecodeError
 
 from dateutil.rrule import *
@@ -8,13 +8,13 @@ from django.http import HttpResponse, HttpResponseServerError, JsonResponse
 from django.urls import re_path
 
 from company.models import Company
-from order.models import SalesOrder
+from order.models import SalesOrder, SalesOrderShipment
 from order.views import SalesOrderDetail
 from part.models import Part
 from part.views import PartDetail
 
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, ScheduleMixin, SettingsMixin, UrlsMixin
+from plugin.mixins import EventMixin, PanelMixin, ScheduleMixin, SettingsMixin, UrlsMixin
 
 from .create_sales_order import LECTRONZ_ORDER_TAG, LECTRONZ_PRODUCT_TAG, create_sales_order
 from .lectronz_v1 import LectronzAPIMixin
@@ -23,7 +23,13 @@ from .templatetags import VALID_CUSTOMER_REFERENCE
 logger = logging.getLogger("lectronzplugin")
 
 class LectronzPlugin(
-    LectronzAPIMixin, PanelMixin, ScheduleMixin, UrlsMixin, SettingsMixin, InvenTreePlugin
+    LectronzAPIMixin,
+    PanelMixin,
+    ScheduleMixin,
+    EventMixin,
+    UrlsMixin,
+    SettingsMixin,
+    InvenTreePlugin,
 ):
     """Plugin to integrate the Lectronz Marketplace into InvenTree"""
 
@@ -204,6 +210,44 @@ class LectronzPlugin(
             if order.was_shipped or sync_fulfilled:
                 target_date = self.get_order_target_date(order.created_at)
                 create_sales_order(lectronz, order, self.products, target_date)
+
+    def wants_process_event(self, event):
+        return event == "salesordershipment.completed"
+
+    def process_event(self, event, *args, **kwargs):
+        assert event == "salesordershipment.completed"
+
+        shipment = SalesOrderShipment.objects.get(pk=kwargs.get("id"))
+        sales_order = shipment.order
+
+        if not (lectronz := self.get_lectronz_company()):
+            return
+        if shipment.order.customer != lectronz:
+            return
+
+        if not isinstance(order_metadata := sales_order.metadata.get(LECTRONZ_ORDER_TAG), dict):
+            order_metadata = sales_order.metadata[LECTRONZ_ORDER_TAG] = {}
+
+        if not (order_id := order_metadata.get("id")):
+            order_id = sales_order.customer_reference[1:]
+
+        response = self.fulfill_order(order_id, shipment.tracking_number, shipment.link)
+        if response is None:
+            order_metadata.get("sync_errors", []).append(
+                f"Failed to fulfill order with id '{order_id}' (no response from Lectronz API)"
+            )
+        elif errors := response.get("errors"):
+            error_detail = ", ".join(
+                f"{error.get('status')}: {detail}" for error in errors
+                if (detail := error.get("detail") or error.get("title"))
+            )
+            order_metadata.get("sync_errors", []).append(
+                f"Failed to fulfill order with id '{order_id}' ({error_detail})"
+            )
+        else:
+            order_metadata["fulfilled"] = str(date.today())
+
+        sales_order.save()
 
     def get_order_target_date(self, created_at: datetime):
         BUSINESS_DAYS = (MO, TU, WE, TH, FR)

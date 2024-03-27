@@ -28,10 +28,17 @@
     {% with lectronz_order=order.metadata.lectronz_order %}
     <div class="lectronz-header">
         {% if lectronz_order.synced %}
+        {% if lectronz_order.fulfilled %}
+        <div class="alert lectronz-alert alert-success">
+            Sales Order has been successfully fulfilled on
+            <b>{{ lectronz_order.fulfilled }}</b>.
+        </div>
+        {% else %}
         <div class="alert lectronz-alert alert-info">
             Sales Order has been synchronized with the Lectronz API on
             <b>{{ lectronz_order.synced }}</b>.
         </div>
+        {% endif %}
         <button class="btn btn-primary" title="Update Sales Order from Lectronz API">
             Update
         </button>

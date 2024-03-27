@@ -59,6 +59,7 @@ def create_sales_order(
         order_metadata = sales_order.metadata[LECTRONZ_ORDER_TAG] = {}
     order_metadata["synced"] = str(date.today())
     order_metadata["sync_errors"] = []
+    order_metadata["id"] = order.id
     order_metadata["total"] = order.total
 
     create_extra_lines(sales_order, order)

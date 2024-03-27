@@ -68,6 +68,16 @@ class LectronzAPIMixin(APICallMixin):
                 return [Product(**product) for product in response.get("products", [])]
         return None
 
+    def fulfill_order(self, order_id, tracking_code, tracking_url, retries=5):
+        endpoint = f"orders/{order_id}"
+        url_args = {
+            "status": "fulfilled", "tracking_code": tracking_code, "tracking_url": tracking_url
+        }
+        for _ in range(retries + 1):
+            if response := self.api_call(endpoint, method="PATCH", url_args=url_args):
+                return response
+        return None
+
 def optional():
     return field(default=None, kw_only=True)
 
