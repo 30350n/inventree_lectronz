@@ -1,14 +1,16 @@
 [project]
 name = "inventree-lectronz"
-version = "1.0-pre"
+version = "1.0"
 description = "Lectronz integration for InvenTree"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Plugins",
 ]
+keywords = ["inventree", "inventree-plugin", "lectronz", "inventree-lectronz"]
 license.text = "MIT"
 authors = [{ name = "Bobbe", email = "mail@30350n.de" }]
 
