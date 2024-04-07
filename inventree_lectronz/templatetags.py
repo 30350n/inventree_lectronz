@@ -11,3 +11,7 @@ def lectronz_valid_customer_reference(reference):
     return VALID_CUSTOMER_REFERENCE.fullmatch(reference) is not None
 
 VALID_CUSTOMER_REFERENCE = re.compile(r"^#?(\d+)$")
+
+@register.filter
+def lectronz_invoice_url(order_id):
+    return f"https://lectronz.com/seller/orders/{order_id}/customer_invoice.pdf"

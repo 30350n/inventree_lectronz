@@ -50,6 +50,12 @@
             Synchronize
         </button>
         {% endif %}
+        {% if lectronz_order.id %}
+        <a class="btn btn-info" href="{{ lectronz_order.id|lectronz_invoice_url }}"
+            title="Download Sales Order invoice from Lectronz">
+            Download Invoice
+        </a>
+        {% endif %}
     </div>
     {% if not order.total_price.amount|lectronz_float_eq:lectronz_order.total %}
     <div class="alert lectronz-alert alert-warning"><b>
