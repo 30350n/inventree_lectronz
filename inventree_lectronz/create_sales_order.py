@@ -43,7 +43,7 @@ def create_sales_order(
         "customer_reference": f"#{order.id}",
         "shipment_date": order.fulfilled_at,
         "description":
-            f"Customer Note: \"{order.customer_note}\"" if order.customer_note else "",
+            f"Customer Note: \"{order.customer_note}\""[:250] if order.customer_note else "",
         "link": f"https://lectronz.com/seller/orders/{order.id}/edit",
         "target_date": target_date,
         "creation_date": order.created_at,
@@ -79,7 +79,7 @@ def create_extra_lines(sales_order: SalesOrder, order: Order):
     extra_lines = SalesOrderExtraLine.objects.filter(order=sales_order)
 
     shipping_line_data = {
-        "description": f"Shipping Method: {order.shipping_method}",
+        "description": f"Shipping Method: {order.shipping_method}"[:250],
         "quantity": 1,
         "price": Money(order.shipping_cost, order.currency.value),
     }
@@ -178,7 +178,7 @@ def create_shipment(sales_order: SalesOrder, order: Order):
 
     shipment_data = {
         "shipment_date": order.fulfilled_at,
-        "tracking_number": order.tracking_code,
+        "tracking_number": order.tracking_code[:100],
         "invoice_number": f"#{order.id}",
         "link": order.tracking_url,
     }
