@@ -153,8 +153,8 @@ def create_line_item(
         "shipped": float(order_item.quantity) if order.was_shipped else 0.0,
         "notes":
             f"Product ID: {product_id}"
-            + f", Discount: {order_item.discount:.1f}%" if order_item.discount else "",
-        "reference": reference,
+            f", Discount: {order_item.discount:.1f}%" if order_item.discount else "",
+        "reference": reference[:100],
         "quantity": float(order_item.quantity),
         "link": product.url if product else None,
     }
