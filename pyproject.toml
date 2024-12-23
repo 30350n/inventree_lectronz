@@ -1,6 +1,6 @@
 [project]
 name = "inventree-lectronz"
-version = "1.0"
+version = "1.1"
 description = "Lectronz integration for InvenTree"
 readme = "README.md"
 requires-python = ">=3.8"
