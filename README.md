@@ -14,7 +14,8 @@ InvenTree.
 - [x] **Automatic order fulfillment**<br>
   *Lectronz orders will be automatically fulfilled if you complete a Sales Order Shipment.*
 - [ ] **Automatic stock synchronization**<br>
-  *Not possible yet, see [`lektronz-marketplace#33`](https://github.com/omzlo/lektronz-marketplace/issues/33).*
+  ~*Not possible yet, see [`lektronz-marketplace#33`](https://github.com/omzlo/lektronz-marketplace/issues/33).*~
+  *Possible now, but not implemented yet.*
 
 ## Installation
 
