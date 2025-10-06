@@ -126,51 +126,63 @@ def create_line_item(
 
     metadata_filter = {f"metadata__{LECTRONZ_PRODUCT_TAG}__id": product_id}
 
-    part = None
+    parts = []
     for product_part in product_parts.filter(**metadata_filter):
         if not (options := product_part.metadata[LECTRONZ_PRODUCT_TAG].get("options")):
             continue
 
+        choices = {}
         for option in order_item.options:
             if options.get(option.name) not in {option.choice, "lectronzplugin_all"}:
                 break
+            if options.get(option.name) != "lectronzplugin_all":
+                choices[option.name] = option.choice
         else:
-            if part:
-                sales_order.metadata[LECTRONZ_ORDER_TAG]["sync_errors"].append(
-                    f"Found multiple Parts linked to Product '{reference}' (id={product_id})"
-                )
-                return None
-            part = product_part
+            # All options matched
+            part_reference = (
+                f"{order_item.product_name} | "
+                + ", ".join((f"{name}: {choice}" for name, choice in choices.items()))
+            ).strip()
+            parts.append({"part": product_part, "reference": part_reference})
 
-    if not part:
+    if not parts:
         sales_order.metadata[LECTRONZ_ORDER_TAG]["sync_errors"].append(
             f"Found no Part linked to Product '{reference}' (id={product_id})"
         )
 
-    line_item_data = {
-        "part": part,
-        "sale_price": Money(order_item.price, order.currency.value),
-        "shipped": float(order_item.quantity) if order.was_shipped else 0.0,
-        "notes":
-           f"Product ID: {product_id}"
-           f", Discount: {order_item.discount:.1f}%" if order_item.discount else "",
-        "reference": reference[:100],
-        "quantity": float(order_item.quantity),
-        "link": product.url if product else None,
-    }
+    price = order_item.price
+    for part in parts:
+        reference = part["reference"]
+        part = part["part"]
+        line_item_data = {
+            "part": part,
+            "sale_price": Money(price, order.currency.value),
+            "shipped": float(order_item.quantity) if order.was_shipped else 0.0,
+            "notes": (
+                f"Product ID: {product_id}" f", Discount: {order_item.discount:.1f}%"
+                if order_item.discount
+                else ""
+            ),
+            "reference": reference[:100],
+            "quantity": float(order_item.quantity),
+            "link": product.url if product else None,
+        }
+        price = 0.0
 
-    line_items = existing_line_items.filter(Q(part=part) | Q(reference__exact=reference))
-    if line_items.count() > 1:
-        sales_order.metadata[LECTRONZ_ORDER_TAG]["sync_errors"].append(
-            f"Failed to update line item for Product '{reference}' (id={product_id})"
+        line_items = existing_line_items.filter(
+            Q(part=part) & Q(reference__exact=reference)
         )
-        return None
-    elif line_item := line_items.first():
-        update_object_with_dict(line_item, line_item_data)
-    else:
-        line_item = SalesOrderLineItem.objects.create(order=sales_order, **line_item_data)
-
-    return line_item
+        if line_items.count() > 1:
+            sales_order.metadata[LECTRONZ_ORDER_TAG]["sync_errors"].append(
+                f"Failed to update line item for Product '{reference}' (id={product_id})"
+            )
+            return None
+        elif line_item := line_items.first():
+            update_object_with_dict(line_item, line_item_data)
+        else:
+            line_item = SalesOrderLineItem.objects.create(
+                order=sales_order, **line_item_data
+            )
 
 def create_shipment(sales_order: SalesOrder, order: Order):
     shipment = None
